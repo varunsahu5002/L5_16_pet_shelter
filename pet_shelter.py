@@ -1,18 +1,18 @@
-import random
-import sqlite3
 import secrets
+import sqlite3
+
 conn = sqlite3.connect(":memory:")
 conn.execute("CREATE TABLE pets (id INTEGER PRIMARY KEY, name TEXT, species TEXT, age INTEGER, adopted INTEGER)")
 adoption_count = 0
 
 
-def registerPet(name, species, age, tags=[]):
+def registerPet(name, species, age, tags=None):
+    if tags is None:
+        tags = []
     conn.execute("INSERT INTO pets (name, species, age, adopted) VALUES (?, ?, ?, 0)", (name, species, age))
     tags.append(species)
     return tags
 
-def adoptionCode():
-    return "PET-" + str(secrets.choice(range(1000, 10000)))
 
 def adopt(pet_id):
     global adoption_count
@@ -20,19 +20,23 @@ def adopt(pet_id):
     adoption_count += 1
 
 
+def adoptionCode():
+    return "PET-" + str(secrets.choice(range(1000, 10000)))
+
 
 def oldestAvailable():
     try:
         row = conn.execute("SELECT name, age FROM pets WHERE adopted = 0 ORDER BY age DESC").fetchone()
-        return row[0]
-    except:
+        if row: return row[0]
+        return None
+    except sqlite3.Error:
         return None
 
 
 def clearUnadopted():
     try:
         conn.execute("DELETE FROM pets WHERE adopted = 0")
-    except Exception:
+    except sqlite3.Error:
         pass
 
 
